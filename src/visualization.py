@@ -265,3 +265,122 @@ print(f"\nKey finding: DINO outperforms best classical approach "
       f"({best_clf_name}) by {(dino_kappa - results[best_clf_name]['kappa']):.3f} kappa points")
 print("Classical DIP features confirm lesion_density and vessel_density "
       "are clinically meaningful signals — DINO learns these and more, implicitly.")
+
+from sklearn.metrics import (cohen_kappa_score, classification_report,
+                              confusion_matrix, roc_auc_score)
+from sklearn.preprocessing import label_binarize
+import warnings
+
+# Get predictions with probabilities
+model.load_state_dict(torch.load('best_model.pth'))
+model.eval()
+
+all_preds, all_labels, all_probs = [], [], []
+
+with torch.no_grad():
+    for imgs, labels in val_loader:
+        imgs = imgs.to(device)
+        logits = model(imgs)
+        probs  = torch.softmax(logits, dim=1)
+
+        all_probs.extend(probs.cpu().numpy())
+        all_preds.extend(logits.argmax(1).cpu().numpy())
+        all_labels.extend(labels.numpy())
+
+all_preds  = np.array(all_preds)
+all_labels = np.array(all_labels)
+all_probs  = np.array(all_probs)
+
+# ── 1. The metrics that actually matter ──────────────────────────
+accuracy = (all_preds == all_labels).mean() * 100
+qwk      = cohen_kappa_score(all_labels, all_preds, weights='quadratic')
+linear_k = cohen_kappa_score(all_labels, all_preds, weights='linear')
+
+# One-vs-rest AUC per class
+y_bin = label_binarize(all_labels, classes=[0,1,2,3,4])
+aucs  = []
+for c in range(5):
+    if y_bin[:, c].sum() > 0:
+        aucs.append(roc_auc_score(y_bin[:, c], all_probs[:, c]))
+
+print("=" * 55)
+print("           HONEST EVALUATION REPORT")
+print("=" * 55)
+print(f"  Accuracy (misleading):       {accuracy:.2f}%")
+print(f"  Quadratic Weighted Kappa:    {qwk:.4f}  ← THE real metric")
+print(f"  Linear Weighted Kappa:       {linear_k:.4f}")
+print(f"  Mean AUC (one-vs-rest):      {np.mean(aucs):.4f}")
+print("=" * 55)
+
+# ── 2. Per-class breakdown ────────────────────────────────────────
+print("\nPer-Class Performance:")
+report = classification_report(
+    all_labels, all_preds,
+    target_names=list(class_names.values()),
+    digits=3
+)
+print(report)
+
+# ── 3. Clinical safety check ──────────────────────────────────────
+print("Clinical Safety Check (High-Risk Grades 3 & 4):")
+for grade in [3, 4]:
+    mask   = all_labels == grade
+    recall = (all_preds[mask] == grade).mean() * 100
+    missed = (all_preds[mask] == 0).sum()  # predicted No DR when actually severe
+    print(f"  Grade {grade} ({class_names[grade]}): "
+          f"Recall={recall:.1f}% | "
+          f"Missed as Grade 0 (dangerous): {missed} cases")
+
+# ── 4. Error distance analysis ────────────────────────────────────
+errors      = all_preds[all_preds != all_labels]
+true_errors = all_labels[all_preds != all_labels]
+distances   = np.abs(errors - true_errors)
+
+print(f"\nError Distance Analysis (when wrong, how wrong?):")
+print(f"  Off by 1 grade:  {(distances==1).sum()} ({(distances==1).mean()*100:.1f}% of errors)")
+print(f"  Off by 2 grades: {(distances==2).sum()} ({(distances==2).mean()*100:.1f}% of errors)")
+print(f"  Off by 3+ grades:{(distances>=3).sum()} ({(distances>=3).mean()*100:.1f}% of errors) ← dangerous")
+
+# ── 5. Full visual dashboard ──────────────────────────────────────
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+
+# Confusion matrix
+cm = confusion_matrix(all_labels, all_preds)
+cm_pct = cm.astype(float) / cm.sum(axis=1, keepdims=True) * 100
+sns.heatmap(cm_pct, annot=True, fmt='.1f', ax=axes[0],
+            xticklabels=class_names.values(),
+            yticklabels=class_names.values(),
+            cmap='Blues', vmin=0, vmax=100)
+axes[0].set_title(f'Confusion Matrix (%)\nQWK = {qwk:.3f}', fontsize=12)
+axes[0].set_xlabel('Predicted'); axes[0].set_ylabel('True')
+
+# Per-class metrics bar chart
+report_dict = classification_report(all_labels, all_preds,
+                                     target_names=list(class_names.values()),
+                                     output_dict=True)
+metrics_df = pd.DataFrame({
+    'Precision': [report_dict[c]['precision'] for c in class_names.values()],
+    'Recall':    [report_dict[c]['recall']    for c in class_names.values()],
+    'F1-Score':  [report_dict[c]['f1-score']  for c in class_names.values()],
+}, index=class_names.values())
+
+metrics_df.plot(kind='bar', ax=axes[1], color=['#4e79a7','#e15759','#59a14f'],
+                alpha=0.85, edgecolor='black')
+axes[1].set_title('Per-Class Precision / Recall / F1', fontsize=12)
+axes[1].set_xlabel('DR Grade'); axes[1].set_ylabel('Score')
+axes[1].set_ylim(0, 1.1); axes[1].legend(loc='lower right')
+axes[1].tick_params(axis='x', rotation=15)
+
+# AUC per class
+auc_labels = [f"{class_names[c][:10]}\n(AUC={aucs[c]:.3f})" for c in range(5)]
+axes[2].bar(auc_labels, aucs, color='#76b7b2', alpha=0.85, edgecolor='black')
+axes[2].axhline(0.8, color='orange', linestyle='--', label='Good threshold (0.8)')
+axes[2].axhline(0.9, color='green',  linestyle='--', label='Excellent (0.9)')
+axes[2].set_title('ROC-AUC per Class (One-vs-Rest)', fontsize=12)
+axes[2].set_ylabel('AUC'); axes[2].set_ylim(0.5, 1.05)
+axes[2].legend(fontsize=8)
+axes[2].tick_params(axis='x', rotation=10)
+
+plt.suptitle('Complete Model Evaluation — Beyond Accuracy', fontsize=14, y=1.02)
+plt.tight_layout()
+plt.show()
