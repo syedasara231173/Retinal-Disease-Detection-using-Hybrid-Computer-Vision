@@ -31,3 +31,9 @@ Classification
 ↓
 
 Attention Visualization
+
+## 🧠 Explainable AI
+
+To improve transparency, attention maps are generated from the DINO Vision Transformer, allowing visualization of retinal regions contributing most to the final prediction.
+
+This helps clinicians understand the model's decision-making process.
