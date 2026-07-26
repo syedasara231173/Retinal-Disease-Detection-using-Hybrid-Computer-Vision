@@ -15,3 +15,9 @@ For each retinal fundus image:
 Green channel extraction improves the visibility of retinal blood vessels and subtle pathological structures, providing a cleaner representation for subsequent preprocessing operations such as contrast enhancement, vessel segmentation, and lesion localization. By emphasizing clinically relevant features while reducing redundant color information, this step helps improve feature quality before the images are processed by the DINO Vision Transformer.
 
 Overall, green channel extraction serves as the first stage of the hybrid computer vision pipeline, establishing a stronger visual foundation for accurate and explainable diabetic retinopathy classification.
+
+# Techique 2
+## Contrast Limited Adaptive Histogram Equalization (CLAHE)
+CLAHE was applied to improve the local contrast of retinal fundus images while preserving fine anatomical structures. Unlike standard histogram equalization, CLAHE enhances contrast within small image regions and limits excessive amplification of noise, making it particularly suitable for medical imaging applications.
+
+This preprocessing step enhances the visibility of retinal blood vessels, microaneurysms, hemorrhages, and exudates, resulting in clearer feature representations for subsequent vessel segmentation, lesion detection, and DINO Vision Transformer-based classification. By producing higher-quality input images, CLAHE improves the robustness of the proposed diabetic retinopathy detection framework.
