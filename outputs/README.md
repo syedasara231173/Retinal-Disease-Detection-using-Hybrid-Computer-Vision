@@ -29,3 +29,11 @@ This preprocessing step enhances the visibility of retinal blood vessels, microa
 Top-Hat Transformation is a morphological image processing technique used to enhance small, bright retinal structures while suppressing uneven background illumination. By subtracting the morphologically opened image from the original image, it improves the visibility of fine anatomical details such as blood vessels and hard exudates.
 
 In our preprocessing pipeline, this step enhances local contrast and highlights subtle pathological features, providing cleaner and more informative inputs for vessel segmentation, lesion detection, and the DINO Vision Transformer. As a result, it improves feature representation and supports more accurate diabetic retinopathy classification.
+
+# Technique 4
+## Black-Hat Transformation
+
+Black-Hat Transformation is a morphological image processing technique used to enhance **small, dark structures** in retinal fundus images. It is computed by subtracting the original image from its morphologically closed version, making dark regions such as blood vessels, microaneurysms, and certain hemorrhages more prominent against the retinal background.
+
+In our preprocessing pipeline, Black-Hat Transformation complements other enhancement techniques by improving the visibility of subtle dark pathological features. This enriched representation supports more accurate vessel segmentation, lesion analysis, and feature extraction, ultimately providing higher-quality inputs for the DINO Vision Transformer.
+
