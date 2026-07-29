@@ -21,3 +21,11 @@ Overall, green channel extraction serves as the first stage of the hybrid comput
 CLAHE was applied to improve the local contrast of retinal fundus images while preserving fine anatomical structures. Unlike standard histogram equalization, CLAHE enhances contrast within small image regions and limits excessive amplification of noise, making it particularly suitable for medical imaging applications.
 
 This preprocessing step enhances the visibility of retinal blood vessels, microaneurysms, hemorrhages, and exudates, resulting in clearer feature representations for subsequent vessel segmentation, lesion detection, and DINO Vision Transformer-based classification. By producing higher-quality input images, CLAHE improves the robustness of the proposed diabetic retinopathy detection framework.
+
+
+# Technique 3
+## Top-Hat Transformation
+
+Top-Hat Transformation is a morphological image processing technique used to enhance small, bright retinal structures while suppressing uneven background illumination. By subtracting the morphologically opened image from the original image, it improves the visibility of fine anatomical details such as blood vessels and hard exudates.
+
+In our preprocessing pipeline, this step enhances local contrast and highlights subtle pathological features, providing cleaner and more informative inputs for vessel segmentation, lesion detection, and the DINO Vision Transformer. As a result, it improves feature representation and supports more accurate diabetic retinopathy classification.
