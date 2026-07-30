@@ -39,3 +39,12 @@ In our preprocessing pipeline, Black-Hat Transformation complements other enhanc
 
 > **Top-Hat vs. Black-Hat:**  
 > Top-Hat Transformation highlights **small bright structures** (e.g., hard exudates and bright lesions) by removing the background, whereas Black-Hat Transformation emphasizes **small dark structures** (e.g., blood vessels, microaneurysms, and hemorrhages) by suppressing bright background regions. Together, they enhance complementary retinal features, resulting in a more comprehensive representation of the fundus image.
+
+# Technique 5
+## Vessel Mask Generation (Otsu Thresholding)
+
+To extract the retinal vascular network, Otsu's Thresholding was applied to the preprocessed retinal images. Unlike fixed thresholding methods, Otsu's algorithm automatically determines an optimal threshold based on the image intensity distribution, enabling reliable separation of retinal vessels from the background without manual parameter tuning.
+
+Prior to thresholding, the images undergo Green Channel Extraction, CLAHE, Top-Hat Transformation, and Black-Hat Transformation to enhance vessel contrast and suppress background artifacts. A morphological opening operation is then applied to remove small noise while preserving the continuity of the vascular structures.
+
+The resulting binary vessel mask provides a clear representation of the retinal vasculature, facilitating subsequent lesion analysis, feature extraction, and improving the quality of information provided to the DINO Vision Transformer for diabetic retinopathy classification.
