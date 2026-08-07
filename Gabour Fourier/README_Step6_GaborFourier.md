@@ -43,3 +43,35 @@ Both operate on the same **CLAHE-enhanced green channel** used earlier in the pi
 - Sliding it across the image (`filter2D`) measures how strongly the image "agrees" with that angle at every pixel.
 - Doing this at four angles (0°, 45°, 90°, 135°) covers the main directions a vessel could run, and taking the **max** at each pixel means: "whichever angle explained this pixel best, keep that response" — so the combined image shows the vessel network as a whole, not just vessels going one specific way.
 
+---
+
+## Combined Documentation
+
+### How the two techniques work together
+
+The Fourier magnitude spectrum and the four individual Gabor responses, plus their combined maximum, are all displayed side-by-side per sample (7 panels: enhanced image, FFT magnitude, Gabor 0°/45°/90°/135°, and Gabor max). Together they give a **two-scale frequency picture** of the retina:
+
+- **Fourier** → global, "does this image have strong repeating/periodic structure overall?"
+- **Gabor** → local and directional, "where exactly is the oriented texture (vessels), and which way does it run?"
+
+### Why this matters for the overall project
+
+| Value | Explanation |
+|---|---|
+| **Complements Steps 1–3** | Where Step 3 finds discrete lesion candidates, Step 6 characterizes the *background structure* (vessels, texture) those lesions sit on top of — together they build a fuller classical-DIP picture of the retina before deep learning ever runs |
+| **Vessel-aware filtering potential** | The Gabor vessel map can later be used to suppress false-positive lesion candidates that actually fall on a vessel |
+| **Biologically-motivated narrative** | Gabor filtering approximating V1 cortical responses is a genuinely strong, citable talking point for a project write-up or presentation, not just a design flourish |
+| **Reinforces frequency-domain DIP coverage** | Demonstrates FFT and spatial-frequency filtering as distinct, deliberately chosen tools alongside the morphological/statistical tools used in Step 3 |
+
+### Assumptions & limitations (flagged explicitly)
+
+> Stated plainly, since they affect how the outputs should be read:
+
+- Gabor kernel parameters (`ksize=21×21`, `sigma=4.0`, `lambd=10.0`, `gamma=0.5`, four orientations at 45° spacing) are **reasonable defaults for vessel-scale texture**, not values tuned or validated against ground-truth vessel segmentation masks.
+- The Fourier magnitude spectrum is shown for **visual/qualitative analysis only** — no frequency-band feature (e.g., energy in a specific ring) is extracted or fed into a downstream classifier in this step.
+- Taking the max across only four orientations means vessels at intermediate angles get a slightly weaker (though still present) response than vessels aligned exactly with one of the four sampled directions.
+- This step produces **visualizations and candidate texture maps**, not a validated vessel segmentation — no comparison against annotated vessel masks was performed.
+
+---
+
+*This step corresponds to Step 6 of the classical DIP pipeline, building on the spatial-domain lesion detection from Step 3 and preceding the deep learning classification stage of the project.*
